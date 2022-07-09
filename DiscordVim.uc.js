@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Discord Vim Navigation
-// @version      2.4
+// @version      2.5
 // @description  Vim-like Discord navigation, using j/k as up/down.
 //               j/k              navigate messages
-//               o                if the message has a link, open the first one
+//               o                if the message has a link or image, open the first one
 //               p                if the selected message is a reply, go to its parent
 //                                (if you have permission to pin messages, use Ctrl+p instead to avoid triggering pin functionality)
 //               i                focus on textbox
-//               Esc/Ctrl+[       select the last message in the channel
+//               Esc/Ctrl+[       select the last message in the channel, or escape the image viewer if it's open
 //               Alt+j/k          navigate channels
 //               Alt+Shift+j/k    navigate unread channels
 //               Alt+Ctrl+j/k     navigate servers
@@ -48,10 +48,16 @@
             }
 
         }
+        // Press o to open a link or image
         else if (key == 'o') {
             let link = document.querySelector('div[class*="selected-"] a[class*="anchor"]');
             if (link && !link.parentElement.matches('[class*="repliedTextContent-"]')) link.click();
+            else {
+                let img = document.querySelector('div[class*="selected-"] [class^="clickableWrapper-"]');
+                if (img) img.click();
+            }
         }
+        // Press p to go to a reply's parent
         else if (key == 'p') {
             let selectedMessage = document.querySelector('div[class*="selected-"][class*="hasReply-"]');
             if (selectedMessage) {
@@ -112,6 +118,19 @@
                 }, 25);
             }
 
+        }
+
+        // If an image is currently open, use Ctrl+[ to go back to messages
+        else if (e.ctrlKey && e.key == '[' && document.querySelector('[class^="backdrop-"]')) {
+            let imageView = document.querySelector('[class^="backdrop-"]')
+            if (imageView) {
+                imageView.dispatchEvent(new KeyboardEvent('keydown', {
+                    key: 'Escape',
+                    which: 27,
+                    bubbles: true,
+                }))
+                console.log("escaped");
+            }
         }
 
         // Press Esc or Ctrl+[ to focus on the last message in the channel
