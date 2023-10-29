@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Discord Vim Navigation
-// @version      2.5
+// @version      2.0
 // @description  Vim-like Discord navigation, using j/k as up/down.
 //               j/k              navigate messages
 //               o                if the message has a link or image, open the first one
@@ -21,6 +21,9 @@
     document.querySelector('#app-mount').addEventListener('keydown', (e) => {
         let key = e.key.toLowerCase();
 
+        // Allow quick switcher
+        if (e.ctrlKey && key == 'k') return;
+
         // Prevent Discord from changing focus to textbox
         if (!e.altKey && (key == 'j' || key == 'k' || key == 'o' || key == 'p')) {
             e.stopImmediatePropagation();
@@ -34,7 +37,7 @@
             let selectedMsg = document.querySelector('[class*="message"][class*="selected"]');
 
             // Prevent this movement from going down to the textbox
-            if (key == 'j' && selectedMsg == [...document.querySelectorAll('[data-list-item-id^="chat-messages"]')].at(-1)) return;
+            if (key == 'j' && selectedMsg == [...document.querySelectorAll('[data-list-item-id^="chat-messages"]')].pop()) return;
 
             let evt = new KeyboardEvent('keydown', {
                 key: (key == 'j' ? 'ArrowDown' : 'ArrowUp'),
@@ -50,22 +53,22 @@
         }
         // Press o to open a link or image
         else if (key == 'o') {
-            let link = document.querySelector('div[class*="selected-"] a[class*="anchor"]');
-            if (link && !link.parentElement.matches('[class*="repliedTextContent-"]')) link.click();
+            let link = document.querySelector('div[class*="selected_"] a[class*="anchor"]');
+            if (link && !link.parentElement.matches('[class*="repliedTextContent_"]')) link.click();
             else {
-                let img = document.querySelector('div[class*="selected-"] [class^="clickableWrapper-"]');
-                if (img) img.click();
+              let img = document.querySelector('div[class*="selected_"] [class^="clickableWrapper_"]');
+              if (img) img.click();
             }
         }
         // Press p to go to a reply's parent
         else if (key == 'p') {
-            let selectedMessage = document.querySelector('div[class*="selected-"][class*="hasReply-"]');
+            let selectedMessage = document.querySelector('div[class*="selected_"][class*="hasReply_"]');
             if (selectedMessage) {
                 e.preventDefault();
-                let replyBtn = selectedMessage.querySelector('div[class*="repliedTextPreview-"]');
+                let replyBtn = selectedMessage.querySelector('div[class*="repliedTextPreview_"]');
                 let replyId = replyBtn.children[0].id.split('-').at(-1);
                 replyBtn.click();
-                let reply = document.querySelector('#chat-messages-' + replyId);
+                let reply = document.querySelector('#chat-messages_' + replyId);
                 reply.children[0].focus();
                 document.querySelector('#app-mount').dispatchEvent(new KeyboardEvent('keydown', {
                     key: 'ArrowUp',
@@ -95,8 +98,8 @@
                     altKey: e.altKey,
                 }));
 
-                if (document.querySelector('div[class*="chat-"]')) {
-                    channelSwitchStart.observe(document.querySelector('div[class*="chat-"]'), {
+                if (document.querySelector('div[class*="chat_"]')) {
+                    channelSwitchStart.observe(document.querySelector('div[class*="chat_"]'), {
                         childList: true,
                         subtree: true,
                     });
@@ -136,17 +139,29 @@
         // Press Esc or Ctrl+[ to focus on the last message in the channel
         else if (e.key == 'Escape' || e.ctrlKey && e.key == '[') {
 
-            let up = new KeyboardEvent('keydown', {
-                key: 'ArrowUp',
+            let jumpBtn = document.querySelector('[class^="barButtonMain"]');
+
+            if (jumpBtn) {
+              jumpBtn.click();
+            } else {
+              document.querySelector('[class^="scrollerInner"] > *:nth-last-child(2)').scrollIntoView();
+            }
+
+            let bar = document.querySelector('[class*="editor_"]');
+
+            bar.focus();
+            bar.dispatchEvent(new KeyboardEvent('keydown', {
+                key: 'Tab',
                 bubbles: true,
-            });
+            }));
 
-            let el = document.querySelector('[data-list-id="chat-messages"]');
-
-            el.tabindex = -1;
-            el.focus();
-            el.dispatchEvent(up);
-            el.dispatchEvent(up);
+            setTimeout(() => {
+                bar.dispatchEvent(new KeyboardEvent('keydown', {
+                    key: 'ArrowUp',
+                    bubbles: true,
+                    keyCode: 38,
+                }));
+            }, 5);
 
         }
 
@@ -159,7 +174,7 @@
 
             setTimeout(() => {
 
-                channelSwitchEnd.observe(document.querySelector('div[class*="chat-"]'), {
+                channelSwitchEnd.observe(document.querySelector('div[class*="chat_"]'), {
                     childList: true,
                     subtree: true,
                 });
@@ -178,16 +193,25 @@
 
             setTimeout(() => {
 
-                let up = new KeyboardEvent('keydown', {
-                    key: 'ArrowUp',
-                    bubbles: true,
-                });
+                let bar = document.querySelector('[class*="editor_"]');
 
-                let el = document.querySelector('[data-list-id="chat-messages"]');
-                el.tabindex = -1;
-                el.focus();
-                el.dispatchEvent(up);
-                el.dispatchEvent(up);
+                let lastMsg = document.querySelector('[class*="scrollerInner"] > *:nth-last-child(2)'); //document.querySelector('[id^="chat-messages-"]:last-of-type');
+
+                lastMsg.scrollIntoView();
+
+                bar.focus();
+                bar.dispatchEvent(new KeyboardEvent('keydown', {
+                    key: 'Tab',
+                    bubbles: true,
+                }));
+
+                setTimeout(() => {
+                    bar.dispatchEvent(new KeyboardEvent('keydown', {
+                        key: 'ArrowUp',
+                        bubbles: true,
+                        keyCode: 38,
+                    }));
+                }, 5);
 
             }, 25);
             observer.disconnect();
