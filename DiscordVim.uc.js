@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Discord Vim Navigation
-// @version      2.0
+// @version      2.5
 // @description  Vim-like Discord navigation, using j/k as up/down.
 //               j/k              navigate messages
 //               o                if the message has a link or image, open the first one
@@ -11,7 +11,7 @@
 //               Alt+j/k          navigate channels
 //               Alt+Shift+j/k    navigate unread channels
 //               Alt+Ctrl+j/k     navigate servers
-// @author       @Chika#8330
+// @author       @chika.chika
 // @match        https://discord.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=discord.com
 // @grant        none
@@ -219,5 +219,16 @@
         }
 
     });
+
+    // Optional focus ring styling (skinnier, rounder, milder color)
+    let css = document.createElement('style');
+    css.innerHTML = `
+      .focus-rings-ring {
+        box-shadow: 0 0 0 3px #7ba6d1 !important;
+        border-radius: 8px !important;
+      }
+    `;
+    document.head.appendChild(css);
+
 
 })();
