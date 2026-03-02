@@ -98,23 +98,24 @@
 
   // Press o to open a link or attachment
   const openAttachment = () => {
-    const selected = getSelectedMessage();
+    const selected = getSelectedMessage?.();
     if (!selected) return;
 
-    const selectors = [
-      'div[aria-label="Play"][role="button"]', // video
-      'a[class*="anchor"]',                     // link
-      '[class*="clickableWrapper"]'            // image
-    ];
+    const excludeParent = '[class*="repliedTextContent"]';
 
-    for (const sel of selectors) {
-      const el = selected.querySelector(sel);
-      if (el && !el.parentElement.matches('[class*="repliedTextContent"]')) {
+    for (const sel of [
+      'div[aria-label="Play"][role="button"]',
+      'a[class*="anchor"]',
+      '[class*="clickableWrapper"]'
+    ]) {
+      for (const el of selected.querySelectorAll(sel)) {
+        if (el.closest(excludeParent)) continue;
         el.click();
-        break;
+        return;
       }
     }
   };
+
 
   // Press p to go to a reply's parent
   const jumpToParent = (e) => {
